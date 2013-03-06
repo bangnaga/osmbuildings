@@ -1,7 +1,7 @@
 function fadeIn() {
-    fadeFactor = 0;
-    shadows.create();
     clearInterval(fadeTimer);
+    fadeFactor = 0;
+    shadows.render();
     fadeTimer = setInterval(function () {
         fadeFactor += 0.5 * 0.2; // amount * easing
         if (fadeFactor > 1) {
@@ -42,8 +42,6 @@ function render() {
         ax, ay, bx, by,
         a, b, _a, _b
     ;
-
-    shadows.render();
 
     data.sort(function (a, b) {
         return distance(b[CENTER], sortCam) / b[HEIGHT] - distance(a[CENTER], sortCam) / a[HEIGHT];

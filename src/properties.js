@@ -6,8 +6,9 @@ function setSize(w, h) {
     camX = halfWidth;
     camY = height;
     camZ = width / 1.5 / tan(90 / 2) << 0; // adapting cam pos to field of view (90°), 1.5 is an empirical correction factor
-    container.width = width;
-    container.height = height;
+    shadows.setSize(width, height);
+    canvas.width = width;
+    canvas.height = height;
     // TODO: change of maxHeight needs to adjust building heights!
     maxHeight = camZ - 50;
 }

@@ -1,8 +1,7 @@
 var shadows = {
     enabled: true,
-    originX: 0,
-    originY: 0,
-    buffer: new Image(),
+    canvas: null,
+    context: null,
     color: new Color(0, 0, 0),
     colorStr: this.color + '',
     sunAlpha: 1,
@@ -10,7 +9,27 @@ var shadows = {
     directionX: 0,
     directionY: 0,
 
-    create: function () {
+    init: function (container) {
+        this.canvas = createCanvas(container);
+        this.context = this.canvas.getContext('2d');
+    },
+
+    destroy: function () {
+        this.canvas.parentNode.removeChild(this.canvas);
+    },
+
+    setSize: function (w, h) {
+        this.canvas.width = w;
+        this.canvas.height = h;
+    },
+
+    render: function () {
+        this.context.clearRect(0, 0, width, height);
+
+        if (!this.enabled) {
+            return;
+        }
+
         if (!meta || !data) {
             return;
         }
@@ -33,7 +52,7 @@ var shadows = {
             grounds = []
         ;
 
-        context.fillStyle = this.colorStr;
+        this.context.fillStyle = this.colorStr;
 
         for (i = 0, il = data.length; i < il; i++) {
             item = data[i];
@@ -67,7 +86,7 @@ var shadows = {
             }
 
             mode = null;
-            context.beginPath();
+            this.context.beginPath();
             for (j = 0, jl = footprint.length - 3; j < jl; j += 2) {
                 ax = footprint[j];
                 ay = footprint[j + 1];
@@ -88,44 +107,38 @@ var shadows = {
 
                 if ((bx - ax) * (_a.y - ay) > (_a.x - ax) * (by - ay)) {
                     if (mode === 1) {
-                        context.lineTo(ax, ay);
+                        this.context.lineTo(ax, ay);
                     }
                     mode = 0;
                     if (!j) {
-                        context.moveTo(ax, ay);
+                        this.context.moveTo(ax, ay);
                     }
-                    context.lineTo(bx, by);
+                    this.context.lineTo(bx, by);
                 } else {
                     if (mode === 0) {
-                        context.lineTo(_a.x, _a.y);
+                        this.context.lineTo(_a.x, _a.y);
                     }
                     mode = 1;
                     if (!j) {
-                        context.moveTo(_a.x, _a.y);
+                        this.context.moveTo(_a.x, _a.y);
                     }
-                    context.lineTo(_b.x, _b.y);
+                    this.context.lineTo(_b.x, _b.y);
                 }
             }
 
-            context.closePath();
-            context.fill();
+            this.context.closePath();
+            this.context.fill();
 
             grounds.push(footprint);
         }
 
-        // draw all footprints in a different color for later filtering
-        context.fillStyle = wallColorAlpha;
-        for (i = 0, il = grounds.length; i < il; i++) {
-            drawShape(grounds[i]);
-        }
+//        // draw all footprints in a different color for later filtering
+//        this.context.fillStyle = wallColorAlpha;
+//        for (i = 0, il = grounds.length; i < il; i++) {
+//            drawShape(grounds[i]);
+//        }
 
-        this.filter();
-        this.buffer.onload = function () {
-            render();
-        };
-        this.buffer.src = canvas.toDataURL();
-        this.originX = originX;
-        this.originY = originY;
+//        this.filter();
     },
 
     project: function (x, y, h) {
@@ -136,7 +149,7 @@ var shadows = {
     },
 
     filter: function () {
-        var buffer = context.getImageData(0, 0, width, height),
+        var buffer = this.context.getImageData(0, 0, width, height),
             pixels = buffer.data,
             blendAlpha = this.sunAlpha * 255 <<0,
             maxAlpha = 255,
@@ -156,13 +169,7 @@ var shadows = {
             }
         }
 
-        context.putImageData(buffer, 0, 0);
-    },
-
-    render: function () {
-        if (this.enabled && this.length) {
-          context.drawImage(this.buffer, this.originX-originX, this.originY-originY);
-        }
+        this.context.putImageData(buffer, 0, 0);
     },
 
     setSun: function (sun) {
