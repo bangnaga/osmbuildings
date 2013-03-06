@@ -1,12 +1,16 @@
-        function createCanvas(parentNode) {
+        function createContainer(parentNode) {
+            container = doc.createElement('DIV');
+            container.style.pointerEvents = 'none';
+            container.style.position = 'absolute';
+            container.style.left = 0;
+            container.style.top = 0;
+
             canvas = doc.createElement('CANVAS');
             canvas.style.webkitTransform = 'translate3d(0,0,0)'; // turn on hw acceleration
             canvas.style.imageRendering = 'optimizeSpeed';
-            canvas.style.position = 'absolute';
-            canvas.style.pointerEvents = 'none';
-            canvas.style.left = 0;
-            canvas.style.top = 0;
-            parentNode.appendChild(canvas);
+            canvas.width = '100%';
+            canvas.height = '100%';
+            container.appendChild(canvas);
 
             context = canvas.getContext('2d');
             context.lineCap = 'round';
@@ -18,10 +22,11 @@
             } catch (err) {
             }
 
-            return canvas;
+            parentNode.appendChild(container);
+            return container;
         }
 
-        function destroyCanvas() {
+        function destroyContainer() {
             canvas.parentNode.removeChild(canvas);
         }
 

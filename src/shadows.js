@@ -122,7 +122,7 @@ var shadows = {
         this.filter();
         this.buffer.onload = function () {
             render();
-        }
+        };
         this.buffer.src = canvas.toDataURL();
         this.originX = originX;
         this.originY = originY;
