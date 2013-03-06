@@ -45,7 +45,7 @@ var shadows = {
                 footprint[j]     = x = (f[j]     - offX);
                 footprint[j + 1] = y = (f[j + 1] - offY);
 
-                // TODO: checking footprint is sufficient for visibility - NOT ANYMORE!
+                // TODO: checking footprint is sufficient for visibility - NOT VALID FOR SHADOWS!
                 if (!isVisible) {
                     isVisible = (x > 0 && x < width && y > 0 && y < height);
                 }
@@ -119,10 +119,10 @@ var shadows = {
             drawShape(grounds[i]);
         }
 
-//        this.filter();
-  //      this.buffer.src = canvas.toDataURL();
-    //    this.originX = originX;
-      //  this.originY = originY;
+        //this.filter();
+        this.buffer.src = canvas.toDataURL();
+        this.originX = originX;
+        this.originY = originY;
     },
 
     project: function (x, y, h) {
@@ -158,9 +158,7 @@ var shadows = {
 
     render: function () {
         if (this.enabled && this.length) {
-          //  this.create();
-            context.drawImage(this.buffer, 0, 0);
-//          context.drawImage(this.buffer, this.originX-originX, this.originY-originY);
+          context.drawImage(this.buffer, this.originX-originX, this.originY-originY);
         }
     },
 
