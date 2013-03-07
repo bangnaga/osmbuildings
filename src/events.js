@@ -23,6 +23,7 @@ function onMoveEnd(e) {
 
 function onZoomStart(e) {
     isZooming = true;
+    shadows.render();
     render(); // effectively clears because of isZooming flag
 }
 
@@ -32,7 +33,6 @@ function onZoomEnd(e) {
 
     if (rawData) { // GeoJSON
         data = scaleData(rawData);
-        shadows.render();
         render();
     } else {
         render();

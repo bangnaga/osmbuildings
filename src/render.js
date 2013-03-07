@@ -1,7 +1,6 @@
 function fadeIn() {
     clearInterval(fadeTimer);
     fadeFactor = 0;
-    shadows.render();
     fadeTimer = setInterval(function () {
         fadeFactor += 0.5 * 0.2; // amount * easing
         if (fadeFactor > 1) {
@@ -12,6 +11,7 @@ function fadeIn() {
                 data[i][IS_NEW] = 0;
             }
         }
+        shadows.render();
         render();
     }, 33);
 }

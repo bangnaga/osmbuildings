@@ -4,7 +4,7 @@ var shadows = {
     context: null,
     color: new Color(0, 0, 0),
     colorStr: this.color + '',
-    sunAlpha: 1,
+    alpha: 1,
     length: 0,
     directionX: 0,
     directionY: 0,
@@ -14,23 +14,20 @@ var shadows = {
         this.context = this.canvas.getContext('2d');
     },
 
-    destroy: function () {
-        this.canvas.parentNode.removeChild(this.canvas);
-    },
-
-    setSize: function (w, h) {
-        this.canvas.width = w;
-        this.canvas.height = h;
-    },
-
     render: function () {
-        this.context.clearRect(0, 0, width, height);
+        var context = this.context;
+
+        context.clearRect(0, 0, width, height);
 
         if (!this.enabled) {
             return;
         }
 
         if (!meta || !data) {
+            return;
+        }
+
+        if (zoom < minZoom || isZooming) {
             return;
         }
 
@@ -52,14 +49,14 @@ var shadows = {
             grounds = []
         ;
 
-        this.context.fillStyle = this.colorStr;
+        context.beginPath();
 
         for (i = 0, il = data.length; i < il; i++) {
             item = data[i];
 
             isVisible = false;
             f = item[FOOTPRINT];
-            footprint = []; // typed array would be created each pass and is way too slow
+            footprint = [];
             for (j = 0, jl = f.length - 1; j < jl; j += 2) {
                 footprint[j]     = x = (f[j]     - offX);
                 footprint[j + 1] = y = (f[j + 1] - offY);
@@ -76,17 +73,15 @@ var shadows = {
 
             // TODO: check, whether this works
             // when fading in, use a dynamic height
-            //h = item[IS_NEW] ? item[HEIGHT] * fadeFactor : item[HEIGHT];
-            h = item[HEIGHT];
+            h = item[IS_NEW] ? item[HEIGHT] * fadeFactor : item[HEIGHT];
 
             // prepare same calculations for min_height if applicable
             if (item[MIN_HEIGHT]) {
-                //h = item[IS_NEW] ? item[MIN_HEIGHT] * fadeFactor : item[MIN_HEIGHT];
-                h = item[MIN_HEIGHT];
+                h = item[IS_NEW] ? item[MIN_HEIGHT] * fadeFactor : item[MIN_HEIGHT];
             }
 
             mode = null;
-            this.context.beginPath();
+
             for (j = 0, jl = footprint.length - 3; j < jl; j += 2) {
                 ax = footprint[j];
                 ay = footprint[j + 1];
@@ -107,38 +102,49 @@ var shadows = {
 
                 if ((bx - ax) * (_a.y - ay) > (_a.x - ax) * (by - ay)) {
                     if (mode === 1) {
-                        this.context.lineTo(ax, ay);
+                        context.lineTo(ax, ay);
                     }
                     mode = 0;
                     if (!j) {
-                        this.context.moveTo(ax, ay);
+                        context.moveTo(ax, ay);
                     }
-                    this.context.lineTo(bx, by);
+                    context.lineTo(bx, by);
                 } else {
                     if (mode === 0) {
-                        this.context.lineTo(_a.x, _a.y);
+                        context.lineTo(_a.x, _a.y);
                     }
                     mode = 1;
                     if (!j) {
-                        this.context.moveTo(_a.x, _a.y);
+                        context.moveTo(_a.x, _a.y);
                     }
-                    this.context.lineTo(_b.x, _b.y);
+                    context.lineTo(_b.x, _b.y);
                 }
             }
 
-            this.context.closePath();
-            this.context.fill();
+            context.closePath();
 
             grounds.push(footprint);
         }
 
-//        // draw all footprints in a different color for later filtering
-//        this.context.fillStyle = wallColorAlpha;
-//        for (i = 0, il = grounds.length; i < il; i++) {
-//            drawShape(grounds[i]);
-//        }
+        context.fillStyle = this.colorStr;
+        context.fill();
 
-//        this.filter();
+        // now draw all the footprints as negative clipping mask
+        context.globalCompositeOperation = 'destination-out';
+        context.beginPath();
+        var points;
+        for (i = 0, il = grounds.length; i < il; i++) {
+            points = grounds[i];
+            context.moveTo(points[0], points[1]);
+            for (j = 2, jl = points.length; j < jl; j += 2) {
+                context.lineTo(points[j], points[j + 1]);
+            }
+            context.lineTo(points[0], points[1]);
+            context.closePath();
+        }
+        context.fillStyle = '#00ff00';
+        context.fill();
+        context.globalCompositeOperation = 'source-over';
     },
 
     project: function (x, y, h) {
@@ -148,44 +154,39 @@ var shadows = {
         };
     },
 
-    filter: function () {
-        var buffer = this.context.getImageData(0, 0, width, height),
-            pixels = buffer.data,
-            blendAlpha = this.sunAlpha * 255 <<0,
-            maxAlpha = 255,
-            r, a;
+    setAlpha: function(alpha) {
+        this.colorStr = this.color.adjustAlpha(alpha) + '';
+        this.render();
+    },
 
-        for (var i = 0, il = pixels.length; i < il; i += 4) {
-            r = pixels[i + 0];
-            a = pixels[i + 3];
-            // make everything with color and maximum alpha fully transparent
-            if (r && a >= maxAlpha) {
-                pixels[i + 3] = 0;
-            } else
-            // reduce higher alpha values to max shadow color alpha
-            // this removes dark overlapping areas in shadows but keeps all anti aliasing
-            if (a > blendAlpha) {
-                pixels[i + 3] = blendAlpha;
-            }
-        }
-
-        this.context.putImageData(buffer, 0, 0);
+    setEnabled: function (flag) {
+        this.enabled = !!flag;
+        this.render();
     },
 
     setSun: function (sun) {
         if (sun.altitude <= 0) {
             this.length = 0;
-            this.sunAlpha = fromRange(-sun.altitude, 0, 1, 0.2, 0.7);
+            this.alpha = fromRange(-sun.altitude, 0, 1, 0.2, 0.7);
         } else {
             this.length = 1 / tan(sun.altitude);
-            this.sunAlpha = 0.4 / this.length;
+            this.alpha = 0.4 / this.length;
             this.directionX = cos(sun.azimuth) * this.length;
             this.directionY = sin(sun.azimuth) * this.length;
         }
 
-        this.color.a = this.sunAlpha;
+        this.color.a = this.alpha;
         this.colorStr = this.color + '';
 
-        this.create();
+        this.render();
+    },
+
+    setSize: function (w, h) {
+        this.canvas.width = w;
+        this.canvas.height = h;
+    },
+
+    destroy: function () {
+        this.canvas.parentNode.removeChild(this.canvas);
     }
 };
